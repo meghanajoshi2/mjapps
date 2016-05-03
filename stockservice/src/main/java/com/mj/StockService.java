@@ -4,8 +4,13 @@ import com.google.gson.Gson;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Created by mjoshi on 4/19/2016.
@@ -14,22 +19,11 @@ import java.util.concurrent.ConcurrentHashMap;
 @Path("/stockservice")
 public class StockService implements IStockService{
     private static ConcurrentHashMap<String, Stock> map = new ConcurrentHashMap<String, Stock>();
+    IStockDao stockDao = StockDao.getInstance();
+    private static Lock lock = new ReentrantLock();
 
-    static {
-        Stock netflix = new Stock();
-        netflix.setSymbol("NFLX");
-        netflix.setFullName("Netflix");
-        netflix.setPrice(123.45d);
-        map.put("NFLX", netflix);
-
-        Stock facebook = new Stock();
-        facebook.setSymbol("FB");
-        facebook.setFullName("Facebook");
-        facebook.setPrice(99.01d);
-        map.put("FB", facebook);
-
-    }
     public StockService() {
+        initialize();
     }
 
     @GET
@@ -37,6 +31,12 @@ public class StockService implements IStockService{
     @Produces(MediaType.TEXT_PLAIN)
     public String getStock(@PathParam("symbol") String symbol) {
         Stock stock = map.get(symbol);
+        if(stock == null) {
+            stock = stockDao.getStock(symbol);
+            if(stock != null) {
+                map.put(symbol, stock);
+            }
+        }
         if(stock != null) {
             Gson g = new Gson();
             return g.toJson(stock);
@@ -55,8 +55,16 @@ public class StockService implements IStockService{
             String symbol = strTok.nextToken();
             for (String key : map.keySet()) {
                 Stock s = map.get(key);
-                if (s.getSymbol().equals(symbol)) {
-                    stocks.add(s);
+                if(s == null) {
+                    s = stockDao.getStock(symbol);
+                    if(s != null) {
+                        map.put(symbol, s);
+                    }
+                }
+                if(s != null) {
+                    if (s.getSymbol().equals(symbol)) {
+                        stocks.add(s);
+                    }
                 }
             }
         }
@@ -73,6 +81,7 @@ public class StockService implements IStockService{
         Stock s = map.get(newStock.getSymbol());
         if(s == null) {
             map.put(newStock.getSymbol(), newStock);
+            stockDao.insertStock(newStock);
         }
     }
 
@@ -91,6 +100,7 @@ public class StockService implements IStockService{
                 s.setFullName(updateStock.getFullName());
             }
         }
+        stockDao.updateStock(s);
     }
 
     @DELETE
@@ -99,5 +109,21 @@ public class StockService implements IStockService{
     public void deleteStock(String symbol) {
         Stock s = map.get(symbol);
         map.remove(s.getSymbol());
+        stockDao.deleteStock(s);
+    }
+
+    private void initialize() {
+        synchronized (lock) {
+            //initialize map
+            if(map.size() == 0) {
+                IStockDao stockDao = StockDao.getInstance();
+                List<Stock> stocks = stockDao.getAllStocks();
+                if (stocks != null) {
+                    for (Stock s : stocks) {
+                        map.put(s.getSymbol(), s);
+                    }
+                }
+            }
+        }
     }
 }

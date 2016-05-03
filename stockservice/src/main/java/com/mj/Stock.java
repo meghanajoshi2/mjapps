@@ -2,6 +2,7 @@ package com.mj;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.math.BigDecimal;
 
 /**
  * Created by mjoshi on 4/19/2016.
@@ -13,17 +14,17 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 
 public class Stock {
-   private Double price;
+   private BigDecimal price;
    private String symbol;
    private String fullName;
 
     public Stock() {
     }
 
-    public void setPrice(Double inPrice) {
+    public void setPrice(BigDecimal inPrice) {
         price = inPrice;
     }
-    public Double getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 
