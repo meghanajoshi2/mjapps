@@ -72,10 +72,10 @@ public class StockDao implements IStockDao{
             if(symbol != null) {
                 selectSql = selectSql + " symbol = ?";
                 if(name != null) {
-                    selectSql = selectSql + " AND name like '%" + name + "%'";
+                    selectSql = selectSql + " AND name ilike '%" + name + "%'";
                 }
             }else {
-                selectSql = selectSql + " AND name like '%" + name + "%'";
+                selectSql = selectSql + " AND name ilike '%" + name + "%'";
             }
 
             PreparedStatement selectStmt = conn.prepareStatement(selectSql);

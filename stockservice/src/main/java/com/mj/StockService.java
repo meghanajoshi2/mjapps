@@ -18,7 +18,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Path("/stockservice")
 public class StockService implements IStockService{
-    private static ConcurrentHashMap<String, Stock> map = new ConcurrentHashMap<String, Stock>();
+    private ConcurrentHashMap<String, Stock> map = new ConcurrentHashMap<String, Stock>();
     IStockDao stockDao = StockDao.getInstance();
     private static Lock lock = new ReentrantLock();
 
@@ -86,7 +86,7 @@ public class StockService implements IStockService{
     }
 
     @PUT
-    @Path("/stocks/{symbol}")
+    @Path("/stocks")
     @Consumes(MediaType.APPLICATION_JSON)
     public void updateStock(String request) {
         Gson g = new Gson();
@@ -106,7 +106,7 @@ public class StockService implements IStockService{
     @DELETE
     @Path("/stocks/{symbol}")
     @Consumes(MediaType.TEXT_PLAIN)
-    public void deleteStock(String symbol) {
+    public void deleteStock(@PathParam("symbol") String symbol) {
         Stock s = map.get(symbol);
         map.remove(s.getSymbol());
         stockDao.deleteStock(s);
